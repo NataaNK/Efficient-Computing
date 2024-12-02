@@ -15,7 +15,7 @@ class BaseModel():
 
     def __init__(self, opt):
         self.opt = opt
-        self.device = torch.device('cuda' if opt['num_gpu'] != 0 else 'cpu')
+        self.device = torch.device('cpu')  # Forzar el uso de CPU
         self.is_train = opt['is_train']
         self.schedulers = []
         self.optimizers = []
@@ -87,20 +87,10 @@ class BaseModel():
         return self.log_dict
 
     def model_to_device(self, net):
-        """Model to device. It also warps models with DistributedDataParallel
-        or DataParallel.
-
-        Args:
-            net (nn.Module)
-        """
+        self.device = torch.device('cpu')  # Forzar el uso de CPU
         net = net.to(self.device)
-        if self.opt['dist']:
-            find_unused_parameters = self.opt.get('find_unused_parameters', False)
-            net = DistributedDataParallel(
-                net, device_ids=[torch.cuda.current_device()], find_unused_parameters=find_unused_parameters)
-        elif self.opt['num_gpu'] > 1:
-            net = DataParallel(net)
         return net
+
 
     def get_optimizer(self, optim_type, params, lr, **kwargs):
         if optim_type == 'Adam':

@@ -7,13 +7,14 @@ from basicsr.models import build_model
 from basicsr.utils import get_root_logger, get_time_str, make_exp_dirs
 from basicsr.utils.options import dict2str, parse_options
 
+# Importar modelos explícitamente para asegurar registro
+from basicsr.models.ipg_model import IPGModel
 
 def test_pipeline(root_path):
-    # parse options, set distributed setting, set ramdom seed
+    # parse options, set distributed setting, set random seed
     opt, _ = parse_options(root_path, is_train=False)
 
     torch.backends.cudnn.benchmark = True
-    # torch.backends.cudnn.deterministic = True
 
     # mkdir and initialize loggers
     make_exp_dirs(opt)
@@ -30,6 +31,10 @@ def test_pipeline(root_path):
         logger.info(f"Number of test images in {dataset_opt['name']}: {len(test_set)}")
         test_loaders.append(test_loader)
 
+    # Debug: Verificar claves del registro antes de construir el modelo
+    from basicsr.utils.registry import MODEL_REGISTRY
+    logger.info(f"Available models in registry: {MODEL_REGISTRY._obj_map.keys()}")
+
     # create model
     model = build_model(opt)
 
@@ -37,11 +42,6 @@ def test_pipeline(root_path):
         test_set_name = test_loader.dataset.opt['name']
         logger.info(f'Testing {test_set_name}...')
         model.validation(test_loader, current_iter=opt['name'], tb_logger=None, save_img=opt['val']['save_img'])
-        # add metric print
-        if hasattr(model, 'metric_results') and 'psnr' in model.metric_results.keys() and 'ssim' in model.metric_results.keys():
-            result_psnr, result_ssim = model.metric_results['psnr'], model.metric_results['ssim']
-            os.system(f"echo -n '{result_psnr:.3f},{result_ssim:.4f},' >> all1_results.txt")
-            os.system(f"echo -n '{result_psnr:.3f}/{result_ssim:.4f}|' >> all2_results.txt")
 
 if __name__ == '__main__':
     root_path = osp.abspath(osp.join(__file__, osp.pardir, osp.pardir))

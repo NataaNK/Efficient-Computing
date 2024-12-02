@@ -5,6 +5,7 @@ from os import path as osp
 from basicsr.utils import get_root_logger, scandir
 from basicsr.utils.registry import MODEL_REGISTRY
 
+
 __all__ = ['build_model']
 
 # automatically scan and import model modules for registry
